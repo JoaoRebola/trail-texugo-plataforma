@@ -1,6 +1,6 @@
 // Serviço mínimo: permite instalar no telemóvel e vai sempre buscar a versão mais recente
 // (só usa a cópia guardada quando não há rede).
-const CACHE = 'texugo-plataforma-v3';
+const CACHE = 'texugo-plataforma-v4';
 const BASE = ['./', 'index.html', 'estilos.css', 'app.js', 'config.js', 'modo-teste.js', 'logo.png', 'texugo.png', 'icone-192.png'];
 
 self.addEventListener('install', e => {
