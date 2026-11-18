@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Trail do Texugo · Segue em direto</title>
+  <meta name="theme-color" content="#121517">
+  <meta property="og:title" content="Segue o meu Trail do Texugo em direto 🦡">
+  <meta property="og:description" content="Passagens pelos postos, em tempo real, na Serra d'Ossa.">
+  <link rel="icon" href="icone-192.png">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js?v=3"></script>
+  <style>
+    :root { --l: #f4510c; --l2: #ff7a2f; --p: #121517; --c: #1b1f22; --k: #22272b; --b: #f7f3ee; --g: #a7adb2; --v: #3dbe7a; --az: #34d3ff; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: radial-gradient(1200px 600px at 50% -200px, #3a1a08, var(--p) 60%); color: var(--b); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; min-height: 100vh; }
+    header { display: flex; align-items: center; gap: 10px; padding: 14px 16px; }
+    header img { height: 40px; }
+    header .ao { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; letter-spacing: .14em; color: #e5484d; }
+    .ponto { width: 10px; height: 10px; border-radius: 50%; background: #e5484d; box-shadow: 0 0 0 0 rgba(229,72,77,.6); animation: pulsa 1.6s infinite; }
+    @keyframes pulsa { to { box-shadow: 0 0 0 14px rgba(229,72,77,0); } }
+    main { max-width: 640px; margin: 0 auto; padding: 4px 16px 60px; }
+    .sobre { color: var(--l); font-weight: 900; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { font-size: 34px; line-height: 1.02; margin: 6px 0 18px; font-weight: 900; }
+    h1 em { color: var(--l); font-style: normal; }
+    .atleta { background: var(--c); border-radius: 26px; padding: 20px; margin-bottom: 16px; animation: entra .5s ease both; border: 1px solid rgba(255,255,255,.05); }
+    @keyframes entra { from { opacity: 0; transform: translateY(16px); } }
+    .top { display: flex; align-items: center; gap: 14px; }
+    .dorsal { background: linear-gradient(135deg, var(--l2), var(--l) 55%, #c93a00); border-radius: 18px; min-width: 72px; height: 72px; display: grid; place-items: center; font-weight: 900; font-size: 28px; }
+    .nome { font-size: 22px; font-weight: 900; }
+    .perc { color: var(--g); font-size: 14px; }
+    .estado { margin-top: 16px; display: flex; gap: 10px; }
+    .estado div { flex: 1; background: var(--k); border-radius: 16px; padding: 12px; }
+    .estado b { display: block; font-size: 22px; font-weight: 900; }
+    .estado span { color: var(--g); font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .pista { position: relative; height: 54px; margin: 22px 4px 6px; }
+    .pista .base { position: absolute; left: 0; right: 0; top: 24px; height: 6px; border-radius: 9px; background: #2f363b; }
+    .pista .feito { position: absolute; left: 0; top: 24px; height: 6px; border-radius: 9px; background: linear-gradient(90deg, var(--az), var(--l)); transition: width 1.4s cubic-bezier(.2,.8,.2,1); width: 0; }
+    .pista .eu { position: absolute; top: 12px; width: 30px; height: 30px; margin-left: -15px; border-radius: 50%; background: #fff; display: grid; place-items: center; font-size: 17px; transition: left 1.4s cubic-bezier(.2,.8,.2,1); left: 0; box-shadow: 0 0 0 6px rgba(52,211,255,.25); }
+    .pista .pa { position: absolute; top: 20px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: #2b6cb0; border: 2px solid var(--p); }
+    .pista .km { position: absolute; top: 40px; font-size: 10px; color: var(--g); transform: translateX(-50%); }
+    .linha { margin-top: 14px; border-left: 2px solid #2f363b; padding-left: 16px; }
+    .passo { position: relative; padding: 8px 0; }
+    .passo:before { content: ""; position: absolute; left: -23px; top: 13px; width: 12px; height: 12px; border-radius: 50%; background: var(--l); }
+    .passo.meta:before { background: var(--v); } .passo.abandono:before { background: #e5484d; }
+    .passo b { font-size: 15px; } .passo small { color: var(--g); display: block; }
+    .vazio { color: var(--g); text-align: center; padding: 30px 10px; }
+    form { display: flex; gap: 8px; margin: 10px 0 20px; }
+    input { flex: 1; background: var(--c); color: var(--b); border: 1px solid #2f363b; border-radius: 14px; padding: 13px 14px; font: inherit; }
+    button { border: 0; border-radius: 99px; padding: 12px 20px; font-weight: 900; background: linear-gradient(135deg, var(--l2), var(--l)); color: #fff; font: inherit; font-weight: 900; cursor: pointer; }
+    .app { margin-top: 26px; background: var(--c); border-radius: 22px; padding: 18px; display: flex; gap: 14px; align-items: center; }
+    .app img { width: 54px; } .app p { margin: 4px 0 0; color: var(--g); font-size: 14px; }
+    .rodape { color: var(--g); font-size: 12px; text-align: center; margin-top: 24px; }
+  </style>
+</head>
+<body>
+  <header><img src="logo.png" alt="Trail do Texugo"><span class="ao"><span class="ponto"></span>EM DIRETO</span></header>
+  <main>
+    <p class="sobre">Serra d'Ossa · Redondo</p>
+    <h1>Segue o teu <em>Texugo.</em></h1>
+    <form id="f"><input id="d" inputmode="numeric" placeholder="N.º de dorsal (ex.: 214)"><button>Seguir</button></form>
+    <div id="lista"></div>
+    <div class="app"><img src="texugo.png" alt=""><div><b>App oficial do Trail do Texugo</b><p>Mapa 3D sem rede, dorsal com QR, avisos e direto. Procura "Trail do Texugo" no Google Play.</p></div></div>
+    <p class="rodape">Atualiza sozinho a cada 30 segundos · os tempos chegam quando o atleta passa nos postos de controlo.</p>
+  </main>
+<script>
+'use strict';
+const cfg = window.TEXUGO || {};
+const sb = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const hora = d => new Date(d).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+// km dos postos por percurso (traçado oficial 2026)
+const POSTOS = {
+  10: [], 15: [[6.9, 'PA1'], [8.3, 'São Gens'], [13.6, 'PA7']],
+  30: [[6.9, 'PA1'], [10.3, 'PA4'], [14.5, 'São Gens'], [20.3, 'PA6'], [26.1, 'PA7']],
+  46: [[6.9, 'PA1'], [11.3, 'PA2'], [19.3, 'PA3'], [25.1, 'PA4'], [29.2, 'São Gens'], [35.1, 'PA6'], [40.9, 'PA7']],
+};
+const total = p => { const n = parseInt(String(p).match(/\d+/)?.[0] || '0'); return n >= 40 ? 46 : n >= 25 ? 30 : n >= 13 ? 15 : 10; };
+
+let dorsais = new URLSearchParams(location.search).getAll('d').flatMap(x => x.split(',')).map(x => parseInt(x)).filter(Boolean);
+let edicao = null;
+
+async function carregar() {
+  if (!edicao) {
+    const { data } = await sb.from('trail_config').select('dados').eq('id', 1).maybeSingle();
+    edicao = data?.dados?.edicao || '';
+  }
+  const lista = document.getElementById('lista');
+  if (!dorsais.length) { lista.innerHTML = '<div class="vazio">Escreve o número do dorsal para veres as passagens em direto.</div>'; return; }
+  const { data, error } = await sb.from('trail_direto').select('*').eq('edicao', edicao).in('dorsal', dorsais).order('hora', { ascending: true });
+  if (error) { lista.innerHTML = '<div class="vazio">Sem ligação. A tentar outra vez…</div>'; return; }
+  lista.innerHTML = dorsais.map(d => {
+    const ps = (data || []).filter(p => p.dorsal === d);
+    const ult = ps[ps.length - 1];
+    const tot = total(ult?.percurso || '');
+    const km = ult ? (ult.tipo === 'meta' ? tot : parseFloat(String(ult.km).replace(',', '.')) || 0) : 0;
+    const pct = Math.max(0, Math.min(100, km / tot * 100));
+    const estado = !ult ? 'Ainda não passou em nenhum posto' : ult.tipo === 'meta' ? '🏁 Chegou à meta!' : ult.tipo === 'abandono' ? 'Desistiu' : `Passou em ${esc(ult.posto)}`;
+    return `<section class="atleta">
+      <div class="top"><div class="dorsal">${d}</div><div><div class="nome">${esc(ult?.nome || 'Dorsal ' + d)}</div><div class="perc">${esc(ult?.percurso || '')}</div></div></div>
+      <div class="estado"><div><span>Estado</span><b style="font-size:16px">${estado}</b></div><div><span>Última</span><b>${ult ? hora(ult.hora) : '—'}</b></div><div><span>Km</span><b>${ult ? km.toFixed(1) : '—'}</b></div></div>
+      <div class="pista"><div class="base"></div><div class="feito" data-w="${pct}"></div>
+        ${(POSTOS[tot] || []).map(([k, n]) => `<div class="pa" style="left:${k / tot * 100}%" title="${n}"></div><div class="km" style="left:${k / tot * 100}%">${n}</div>`).join('')}
+        <div class="eu" data-l="${pct}">🦡</div></div>
+      <div class="linha">${ps.slice().reverse().map(p => `<div class="passo ${p.tipo}"><b>${esc(p.posto)}${p.km ? ' · km ' + esc(p.km) : ''}</b><small>${hora(p.hora)} · ${p.tipo === 'meta' ? 'meta' : p.tipo === 'partida' ? 'partida' : p.tipo === 'abandono' ? 'abandono' : 'passagem'}</small></div>`).join('') || '<div class="vazio" style="padding:10px 0;text-align:left">À espera da partida.</div>'}</div>
+    </section>`;
+  }).join('');
+  requestAnimationFrame(() => setTimeout(() => {
+    document.querySelectorAll('.feito').forEach(e => e.style.width = e.dataset.w + '%');
+    document.querySelectorAll('.eu').forEach(e => e.style.left = e.dataset.l + '%');
+  }, 60));
+}
+
+document.getElementById('f').onsubmit = e => {
+  e.preventDefault();
+  const v = parseInt(document.getElementById('d').value);
+  if (!v) return;
+  if (!dorsais.includes(v)) dorsais.push(v);
+  history.replaceState(null, '', '?' + dorsais.map(x => 'd=' + x).join('&'));
+  document.getElementById('d').value = '';
+  carregar();
+};
+carregar(); setInterval(carregar, 30000);
+</script>
+</body>
+</html>
