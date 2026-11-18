@@ -1,6 +1,6 @@
 // Serviço mínimo: permite instalar no telemóvel e vai sempre buscar a versão mais recente
 // (só usa a cópia guardada quando não há rede).
-const CACHE = 'texugo-plataforma-v2';
+const CACHE = 'texugo-plataforma-v3';
 const BASE = ['./', 'index.html', 'estilos.css', 'app.js', 'config.js', 'modo-teste.js', 'logo.png', 'texugo.png', 'icone-192.png'];
 
 self.addEventListener('install', e => {
@@ -13,7 +13,7 @@ self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);
   if (e.request.method !== 'GET' || u.origin !== location.origin) return;
   e.respondWith(
-    fetch(e.request).then(r => {
+    fetch(e.request, { cache: 'no-cache' }).then(r => {
       const copia = r.clone();
       caches.open(CACHE).then(c => c.put(e.request, copia));
       return r;
