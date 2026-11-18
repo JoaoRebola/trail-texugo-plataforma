@@ -4,8 +4,11 @@
 'use strict';
 
 const cfg = window.TEXUGO || {};
-const sb = (cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY && window.supabase)
-  ? window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY) : null;
+const emTeste = !!window.ModoTeste?.ativo;   // "Experimentar em modo teste": dados de exemplo, nada é gravado
+const sb = emTeste ? window.ModoTeste.cliente
+  : (cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY && window.supabase)
+    ? window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY) : null;
+if (emTeste) window.ModoTeste.mostrarFaixa();
 
 const $ = s => document.querySelector(s);
 const ecra = $('#ecra');
@@ -32,6 +35,8 @@ async function q(promessa) {
 
 function ir(nome, ...args) {
   if (pararAtual) { try { pararAtual(); } catch {} pararAtual = null; }
+  // recarregar o mesmo ecrã (ex.: depois de aprovar) não cria um passo extra no "voltar"
+  if (historico.length && historico[historico.length - 1][0] === nome) historico.pop();
   historico.push([nome, args]);
   $('#voltar').hidden = historico.length <= 1;
   window.scrollTo({ top: 0 });
@@ -96,7 +101,9 @@ function descarregarCSV(nome, linhas) {
 async function arrancar() {
   if (!sb) {
     ecra.innerHTML = `<div class="entrada-login"><img src="texugo.png" alt=""><h1>Falta ligar ao <em>Supabase</em></h1>
-      <p class="nota">Preenche o ficheiro <b>config.js</b> com o endereço e a chave pública do projeto (ver Supabase/LEIA-ME.md).</p></div>`;
+      <p class="nota">Preenche o ficheiro <b>config.js</b> com o endereço e a chave pública do projeto (ver Supabase/LEIA-ME.md).</p>
+      <button class="btn contorno" id="teste">🧪 Experimentar em modo teste</button></div>`;
+    $('#teste').onclick = () => window.ModoTeste.entrar();
     return;
   }
   const { data: { session } } = await sb.auth.getSession();
@@ -132,7 +139,10 @@ ECRAS.login = () => {
       </div>
       <p class="nota" style="margin-top:14px"><a href="#" id="esqueci">Esqueci-me da palavra-passe</a></p>
     </div>
-    <p class="nota">Só os gestores registados pela organização conseguem gerir.</p></div>`;
+    <p class="nota">Só os gestores registados pela organização conseguem gerir.</p>
+    <button class="btn contorno" id="teste" style="margin-top:8px">🧪 Experimentar em modo teste</button>
+    <p class="nota" style="font-size:12px">Abre a plataforma com dados de exemplo, sem conta. Nada é gravado nem chega à app.</p></div>`;
+  $('#teste').onclick = () => window.ModoTeste.entrar();
   const em = () => $('#em').value.trim(), pw = () => $('#pw').value;
   $('#entrar').onclick = () => sb.auth.signInWithPassword({ email: em(), password: pw() })
     .then(({ error }) => error ? toast('Email ou palavra-passe errados.', true) : arrancar());
