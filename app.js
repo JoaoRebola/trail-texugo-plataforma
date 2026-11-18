@@ -285,8 +285,8 @@ ECRAS.comunicado = (existente = null) => {
   };
 };
 
-async function carregarImagem(f, pasta) {
-  if (f.size > 8 * 1024 * 1024) throw new Error('Imagem demasiado grande (máx. 8 MB).');
+async function carregarImagem(f, pasta, maxMb = 8) {
+  if (f.size > maxMb * 1024 * 1024) throw new Error(`Ficheiro demasiado grande (máx. ${maxMb} MB).`);
   const nome = `${pasta}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${(f.name.split('.').pop() || 'jpg').toLowerCase()}`;
   await q(sb.storage.from('trail-fotos').upload(nome, f, { contentType: f.type, upsert: false }));
   return sb.storage.from('trail-fotos').getPublicUrl(nome).data.publicUrl;
@@ -388,12 +388,25 @@ ECRAS.edicao = () => {
       ${campoP(i, 'km', 'Km', 'style="max-width:90px"')}${campoP(i, 'nome', 'Nome')}${campoP(i, 'frase', 'Frase')}</div><div class="linha">
       ${campoP(i, 'partida', 'Partida')}${campoP(i, 'desnivel', 'Desnível +')}${campoP(i, 'limite', 'Tempo máximo')}</div><div class="linha">
       ${campoP(i, 'barreira', 'Barreira horária')}${campoP(i, 'abastecimentos', 'Abastecimentos')}</div>
-      ${campoP(i, 'gpx', 'Ligação do GPX')}
+      <div class="linha">${campoP(i, 'gpx', 'Ligação do GPX')}<label class="btn contorno peq" style="align-self:flex-end;margin:0;cursor:pointer">📍 Carregar GPX<input type="file" accept=".gpx,application/gpx+xml" data-g="${i}" hidden></label></div>
+      <p class="ajuda" style="margin:4px 0 0;color:var(--cinza,#a7adb2);font-size:13px">A app descarrega o GPX e usa-o no mapa 3D sem rede. Os pontos de passagem (waypoints) do GPX aparecem como postos.</p>
       <div class="linha" style="margin-top:8px"><label style="margin:0"><input type="checkbox" data-c="${i}" ${p.competitivo !== false ? 'checked' : ''}> Competitivo</label>
       <span class="espaco" style="flex:1"></span><button class="btn contorno peq" data-x="${i}">Remover</button></div></div>`).join('');
     $('#percs').querySelectorAll('[data-p]').forEach(x => x.oninput = () => percursos[x.dataset.p][x.dataset.k] = x.value);
     $('#percs').querySelectorAll('[data-c]').forEach(x => x.onchange = () => percursos[x.dataset.c].competitivo = x.checked);
     $('#percs').querySelectorAll('[data-x]').forEach(x => x.onclick = () => { percursos.splice(+x.dataset.x, 1); desenharP(); });
+    $('#percs').querySelectorAll('[data-g]').forEach(x => x.onchange = async () => {
+      const f = x.files[0]; if (!f) return;
+      try {
+        const txt = await f.text();
+        const n = (txt.match(/<(trkpt|rtept)[\s>]/g) || []).length, w = (txt.match(/<wpt[\s>]/g) || []).length;
+        if (n < 10) throw new Error('Este ficheiro não parece um GPX com traçado.');
+        const ficheiro = new File([f], f.name.replace(/[^\w.-]+/g, '-') || 'percurso.gpx', { type: 'application/gpx+xml' });
+        percursos[x.dataset.g].gpx = await carregarImagem(ficheiro, 'gpx', 15);
+        desenharP();
+        alert(`GPX carregado: ${n} pontos${w ? ` e ${w} postos` : ' (sem postos marcados)'}. Carrega em "Guardar e publicar na app".`);
+      } catch (e) { falha(e); }
+    });
   };
   const desenharD = () => {
     $('#prog').innerHTML = programa.map((dia, i) => `<div class="cartao"><div class="linha">
