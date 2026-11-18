@@ -61,6 +61,12 @@
         { id: 1, dorsal: 104, nome: 'Diogo Bilro', telefone: '912345709', lat: 38.6905, lon: -7.5530, mensagem: 'Torci o tornozelo depois da Ermida', criado_em: haMin(3), resolvido: false, resolvido_por: null },
         { id: 2, dorsal: 107, nome: 'Helena Charrua', telefone: '912345761', lat: 38.6950, lon: -7.5620, mensagem: 'Pedido de ajuda pela app', criado_em: haMin(25), resolvido: true, resolvido_por: EU.email },
       ],
+      trail_chat: [
+        { id: 1, edicao: ED, conversa: 'exemplo-conversa-0001', dorsal: 112, nome: 'Rita Pombinho', da_org: false, autor: '', texto: 'Bom dia! Posso levantar o dorsal de um amigo?', lat: null, lon: null, lida: true, criado_em: haMin(2900) },
+        { id: 2, edicao: ED, conversa: 'exemplo-conversa-0001', dorsal: 112, nome: 'Rita Pombinho', da_org: true, autor: 'ana@exemplo.pt', texto: 'Olá Rita! Sim, com a cópia do cartão de cidadão dele e o QR da app.', lat: null, lon: null, lida: true, criado_em: haMin(2880) },
+        { id: 3, edicao: ED, conversa: 'exemplo-conversa-0002', dorsal: 121, nome: 'Bruno Caeiro', da_org: false, autor: '', texto: 'Estou no km 17 e não vejo fitas há uns 5 minutos. Viro à esquerda ou sigo em frente no cruzamento?', lat: 38.7012, lon: -7.5588, lida: false, criado_em: haMin(2) },
+        { id: 4, edicao: ED, conversa: 'exemplo-conversa-0003', dorsal: null, nome: '', da_org: false, autor: '', texto: 'A que horas fecha o secretariado no sábado?', lat: null, lon: null, lida: false, criado_em: haMin(40) },
+      ],
       trail_inquerito: [
         { id: 1, edicao: ED, nota: 5, gostou: 'Os abastecimentos e a paisagem!', melhorar: '', voltaria: true, criado_em: haMin(20000) },
         { id: 2, edicao: ED, nota: 4, gostou: 'Marcação do percurso', melhorar: 'Mais casas de banho na partida', voltaria: true, criado_em: haMin(19000) },

@@ -175,6 +175,7 @@ ECRAS.inicio = async () => {
   ]);
   const paraAprovar = (pend.data || []).filter(a => a.criado_por !== eu.email).length;
   const nSos = sos.count || 0;
+  const nChat = (await sb.from('trail_chat').select('id', { count: 'exact', head: true }).eq('da_org', false).eq('lida', false)).count || 0;
   const b = (ecraNome, ic, titulo, sub, extra = '', classe = '') =>
     `<button class="botao-grande ${classe}" data-ir="${ecraNome}"><span class="ic">${ic}</span><b>${titulo}</b><small>${sub}</small>${extra}</button>`;
   const gestor = pode('admin', 'gestor');
@@ -187,6 +188,7 @@ ECRAS.inicio = async () => {
       ${b('rececao', '🎫', 'Receção de atletas', 'Ler QR e entregar dorsal/kit')}
       ${b('posto', '⛰️', 'Posto de controlo', 'Registar passagens no dia')}
       ${b('sos', '🆘', 'Pedidos de ajuda', 'SOS enviados pela app', nSos ? `<span class="contador">${nSos}</span>` : '', nSos ? 'perigo' : '')}
+      ${b('chat', '💬', 'Chat com atletas', 'Semana da prova e dia da prova', nChat ? `<span class="contador">${nChat}</span>` : '', nChat ? 'destaque' : '')}
       ${b('inscritos', '👟', 'Inscritos', 'Importar lista da Stop&Go')}
       ${gestor ? b('edicao', '🗓️', 'Edição da prova', 'Datas, inscrições, percursos') : ''}
       ${gestor ? b('resultados', '🏁', 'Resultados', 'Importar classificações') : ''}
@@ -660,6 +662,55 @@ ECRAS.sos = async () => {
   };
   await carregar().catch(falha);
   const t = setInterval(() => carregar().catch(() => {}), 15000);
+  pararAtual = () => clearInterval(t);
+};
+
+/* ---------------------------------------------------------------- Chat com atletas */
+ECRAS.chat = async (aberta = null) => {
+  const RAPIDAS = ['Recebido! Estamos a verificar.', 'Já vamos a caminho. Fica onde estás.', 'Segue as fitas laranja até ao próximo posto.',
+    'Dirige-te ao posto de abastecimento mais próximo.', 'Liga-nos para o número de emergência da prova.', 'Obrigado! Boa prova 🦡'];
+  ecra.innerHTML = `<p class="sobre">Semana da prova</p><h1>Chat com <em>atletas.</em></h1>
+    <p class="nota">Aberto na app 7 dias antes até 2 dias depois da prova. Atualiza sozinho e apita quando chega mensagem nova.</p>
+    <div class="chat-grelha"><div id="convs" class="chat-convs"></div><div id="fio" class="chat-fio"></div></div>`;
+  let ultimoId = 0, primeira = true;
+  const nomeConv = m => m ? `${m.dorsal ? '#' + m.dorsal + ' ' : ''}${m.nome || 'Atleta sem dorsal na app'}` : '';
+  const carregar = async () => {
+    const msgs = await q(sb.from('trail_chat').select('*').order('id', { ascending: false }).limit(1500));
+    const maxId = msgs.reduce((a, m) => Math.max(a, m.id), 0);
+    if (!primeira && msgs.some(m => m.id > ultimoId && !m.da_org)) { bip(false); }
+    ultimoId = maxId; primeira = false;
+    const porConv = {};
+    msgs.forEach(m => (porConv[m.conversa] ||= []).push(m));
+    const convs = Object.entries(porConv).map(([c, l]) => ({ c, l: l.slice().reverse(), ult: l[0], nl: l.filter(m => !m.da_org && !m.lida).length,
+      atleta: l.find(m => !m.da_org) })).sort((a, b) => (b.nl > 0) - (a.nl > 0) || b.ult.id - a.ult.id);
+    $('#convs').innerHTML = convs.length ? convs.map(v => `<button class="chat-conv ${v.c === aberta ? 'ativa' : ''}" data-c="${esc(v.c)}">
+        <b>${esc(nomeConv(v.atleta))}</b>${v.nl ? `<span class="contador">${v.nl}</span>` : ''}
+        <small>${v.ult.da_org ? 'Tu: ' : ''}${esc(v.ult.texto.slice(0, 70))}</small><small class="nota">${dataHora(v.ult.criado_em)}</small></button>`).join('')
+      : '<div class="vazio">Ainda não há mensagens. 🦡</div>';
+    $('#convs').querySelectorAll('[data-c]').forEach(b => b.onclick = () => { aberta = b.dataset.c; carregar().catch(falha); });
+    const v = convs.find(x => x.c === aberta);
+    if (!v) { $('#fio').innerHTML = convs.length ? '<div class="vazio">Escolhe uma conversa.</div>' : ''; return; }
+    const loc = v.l.filter(m => m.lat).pop();
+    $('#fio').innerHTML = `<div class="linha"><b style="font-size:18px">${esc(nomeConv(v.atleta))}</b><span class="espaco" style="flex:1"></span>
+        ${loc ? `<a class="btn peq" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${loc.lat},${loc.lon}">📍 Última localização</a>` : ''}</div>
+      <div class="chat-msgs" id="msgs">${v.l.map(m => `<div class="chat-msg ${m.da_org ? 'org' : 'atl'}">${esc(m.texto)}
+        <small>${m.da_org ? esc((m.autor || '').split('@')[0]) + ' · ' : ''}${dataHora(m.criado_em)}${m.lat ? ' · 📍' : ''}</small></div>`).join('')}</div>
+      <div class="chat-rapidas">${RAPIDAS.map((r, i) => `<button class="btn contorno peq" data-q="${i}">${esc(r)}</button>`).join('')}</div>
+      <form id="resp" class="linha"><input id="txt" class="cresce" maxlength="1000" placeholder="Responder a ${esc(nomeConv(v.atleta))}…" autocomplete="off"><button class="btn">Enviar</button></form>`;
+    const caixa = $('#msgs'); caixa.scrollTop = caixa.scrollHeight;
+    if (v.nl) await sb.from('trail_chat').update({ lida: true }).eq('conversa', aberta).eq('da_org', false).eq('lida', false);
+    const enviar = async texto => {
+      if (!texto.trim()) return;
+      await q(sb.from('trail_chat').insert({ edicao: v.ult.edicao, conversa: aberta, dorsal: v.atleta?.dorsal ?? null, nome: v.atleta?.nome || '',
+        da_org: true, autor: eu.email, texto: texto.trim().slice(0, 1000) }));
+      await carregar();
+    };
+    $('#fio').querySelectorAll('[data-q]').forEach(b => b.onclick = () => enviar(RAPIDAS[b.dataset.q]).catch(falha));
+    $('#resp').onsubmit = e => { e.preventDefault(); const t = $('#txt').value; $('#txt').value = ''; enviar(t).catch(falha); };
+  };
+  await carregar().catch(falha);
+  // não atualiza enquanto se escreve uma resposta (para não apagar o texto)
+  const t = setInterval(() => { if (!$('#txt')?.value) carregar().catch(() => {}); }, 8000);
   pararAtual = () => clearInterval(t);
 };
 

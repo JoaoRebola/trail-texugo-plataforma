@@ -116,3 +116,19 @@ td { padding: 9px 6px; border-bottom: 1px solid var(--linha); vertical-align: to
   padding: 8px 14px; background: repeating-linear-gradient(135deg, #d99a00 0 14px, #e5a800 14px 28px); color: #121517; font-size: 13px; }
 .faixa-teste span { flex: 1; min-width: 200px; }
 .faixa-teste button { border: 0; border-radius: 99px; padding: 6px 12px; font-weight: 800; background: #121517; color: #fff; cursor: pointer; }
+
+/* Chat com atletas */
+.chat-grelha { display: grid; grid-template-columns: minmax(220px, 320px) 1fr; gap: 14px; margin-top: 14px; }
+@media (max-width: 760px) { .chat-grelha { grid-template-columns: 1fr; } }
+.chat-convs { display: flex; flex-direction: column; gap: 8px; max-height: 70vh; overflow: auto; }
+.chat-conv { position: relative; text-align: left; background: #1b1f22; color: inherit; border: 1px solid rgba(255,255,255,.06); border-radius: 16px; padding: 12px 14px; cursor: pointer; display: flex; flex-direction: column; gap: 3px; font: inherit; }
+.chat-conv.ativa { border-color: #f4510c; }
+.chat-conv .contador { position: absolute; top: 10px; right: 10px; }
+.chat-conv small { color: #a7adb2; }
+.chat-fio { background: #1b1f22; border-radius: 20px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-height: 300px; }
+.chat-msgs { flex: 1; overflow: auto; max-height: 52vh; display: flex; flex-direction: column; gap: 8px; padding: 4px; }
+.chat-msg { max-width: 78%; padding: 10px 13px; border-radius: 16px; white-space: pre-wrap; word-break: break-word; }
+.chat-msg small { display: block; opacity: .65; font-size: 11px; margin-top: 4px; }
+.chat-msg.atl { background: #2a2f33; align-self: flex-start; border-bottom-left-radius: 4px; }
+.chat-msg.org { background: #f4510c; color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+.chat-rapidas { display: flex; flex-wrap: wrap; gap: 6px; }
